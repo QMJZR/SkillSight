@@ -1,0 +1,8 @@
+# SkillSight Core Dependencies
+# Tested with Python 3.10
+
+torch==2.6.0
+sentence-transformers==5.5.1
+numpy==2.4.6
+huggingface-hub==1.16.1
+tqdm==4.67.1
