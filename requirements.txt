@@ -1,5 +1,5 @@
 # SkillSight Core Dependencies
-# Tested with Python 3.10
+# Tested with Python 3.11; numpy 2.4.6 requires Python >=3.11.
 
 torch==2.6.0
 sentence-transformers==5.5.1

@@ -10,10 +10,11 @@ The commands below assume that the repository is cloned as `SkillSight/` and tha
 
 ### 1. Create the environment
 
-Python 3.10 and a CUDA-enabled environment are recommended.
+Python 3.11 and a CUDA-enabled environment are recommended. The pinned
+`numpy==2.4.6` release requires Python 3.11 or newer.
 
 ```bash
-conda create -n skillsight python=3.10 -y
+conda create -n skillsight python=3.11 -y
 conda activate skillsight
 pip install -r requirements.txt
 ```
@@ -141,6 +142,7 @@ python -m cli \
 | `--top-k` | Evaluation cutoffs | `1 3 5 10 20 50` |
 | `--candidate-k` | Candidate depth before calibration | `300` |
 | `--lexical-beta` | Lexical calibration strength | `1.0` |
+| `--variants` | Retrieval variants evaluated together | `skillsight` |
 | `--max-tokens-per-doc` | Maximum tokens per skill document | `200` |
 | `--doc-batch` | Document encoding batch size | `4` |
 | `--query-batch` | Query encoding batch size | `64` |
@@ -149,6 +151,34 @@ python -m cli \
 | `--output-dir` | Evaluation output directory | `./results` |
 
 Run `python -m cli --help` for the complete interface.
+
+### Retrieval Ablations
+
+The reproduction fork can evaluate multiple retrieval variants in one pass over
+the cached corpus embeddings:
+
+```bash
+python -m SkillSight.cli \
+  --benchmark sra \
+  --repo-root ./third_party/SR-Agents-main \
+  --model-path ./models/Qwen3-Embedding-0.6B \
+  --variants dense sbc lec dense_lec skillsight skillsight_eq15
+```
+
+The variants are defined as follows:
+
+- `dense`: raw dense score `q^T d`.
+- `sbc`: background-calibrated dense score `q_perp^T d_perp`.
+- `lec`: lexical-only diagnostic ranking over the dense top-K candidates.
+- `dense_lec`: dense and lexical local fusion without background projection.
+- `skillsight`: the repository's reported SkillSight fusion
+  (`skillsight_fusion(..., lam=None)`).
+- `skillsight_eq15`: the paper's equation 15 fusion
+  (`skillsight_fusion(..., lam=1.0)`).
+
+The default remains `skillsight`, so existing commands reproduce the original
+reported behavior. Corpus and query embeddings are reused when their caches are
+present, so adding variants does not require re-encoding the corpus.
 
 ## End-to-End Agent Evaluation
 
@@ -288,4 +318,3 @@ Please also cite the benchmark repositories used in the experiments:
 ## License
 
 Please follow the licenses and terms of use of this repository's dependencies, pretrained models, and benchmark datasets.
-

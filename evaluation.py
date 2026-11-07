@@ -12,7 +12,7 @@ import numpy as np
 import torch
 
 from .cache import candidate_embedding_cache_paths, load_or_encode_embeddings
-from .constants import LEXICAL_BETA, MIN_GENERIC_DF, VARIANT_SKILLSIGHT
+from .constants import DEFAULT_VARIANTS, LEXICAL_BETA, MIN_GENERIC_DF
 from .data import (
     collect_queries,
     load_instances,
@@ -51,6 +51,7 @@ def evaluate_dataset(
     score_batch: int,
     cache_dir: Path,
     max_tokens_per_doc: int,
+    variants: Sequence[str],
     prebuilt_text_model: Optional[Tuple[TextStats, np.ndarray]] = None,
     lexical_beta: float = LEXICAL_BETA,
 ) -> Dict[str, dict]:
@@ -72,6 +73,7 @@ def evaluate_dataset(
         query_texts=query_texts,
         query_embeddings=query_embeddings,
         final_k=max(top_ks),
+        variants=variants,
     )
     dataset_metrics: Dict[str, dict] = {}
     for variant, result in results.items():
@@ -128,7 +130,7 @@ def run_evaluation(args) -> dict:
     if args.primary_k not in args.top_k:
         args.top_k = sorted(set(args.top_k + [args.primary_k]))
     args.top_k = sorted(set(args.top_k))
-    args.variants = [VARIANT_SKILLSIGHT]
+    args.variants = list(dict.fromkeys(getattr(args, "variants", None) or DEFAULT_VARIANTS))
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     args.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -167,6 +169,7 @@ def run_evaluation(args) -> dict:
             score_batch=args.score_batch,
             cache_dir=text_model_cache_dir,
             max_tokens_per_doc=args.max_tokens_per_doc,
+            variants=args.variants,
             prebuilt_text_model=prebuilt_text_model,
             lexical_beta=getattr(args, "lexical_beta", LEXICAL_BETA),
         )

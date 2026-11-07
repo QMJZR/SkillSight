@@ -33,8 +33,23 @@ TEXT_MODEL_VERSION = "skillsight-v1"
 # controls the suppression sharpness; 0 recovers the plain-IDF lexical evidence.
 LEXICAL_BETA = 1.0
 
-# Method-facing variant name.
+# Retrieval variants used by the reproduction and ablation experiments.
+VARIANT_DENSE = "dense"
+VARIANT_SBC = "sbc"
+VARIANT_LEC = "lec"
+VARIANT_DENSE_LEC = "dense_lec"
 VARIANT_SKILLSIGHT = "skillsight"
+VARIANT_SKILLSIGHT_EQ15 = "skillsight_eq15"
+
+ALL_VARIANTS = (
+    VARIANT_DENSE,
+    VARIANT_SBC,
+    VARIANT_LEC,
+    VARIANT_DENSE_LEC,
+    VARIANT_SKILLSIGHT,
+    VARIANT_SKILLSIGHT_EQ15,
+)
+DEFAULT_VARIANTS = (VARIANT_SKILLSIGHT,)
 
 STOPWORDS = {
     "a", "an", "the", "and", "or", "but", "if", "then", "else", "when", "while",

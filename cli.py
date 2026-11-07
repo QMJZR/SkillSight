@@ -7,14 +7,15 @@ from pathlib import Path
 from typing import Sequence
 
 from .constants import (
+    ALL_VARIANTS,
     DEFAULT_DATASETS,
     DEFAULT_MAX_SEQ_LENGTH,
     DEFAULT_MODEL_PATH,
     DEFAULT_TOP_K,
+    DEFAULT_VARIANTS,
     LEXICAL_BETA,
     MAX_TOKENS_PER_DOC,
     REPO_ROOT_DEFAULT,
-    VARIANT_SKILLSIGHT,
 )
 from .evaluation import run_evaluation
 
@@ -84,6 +85,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--output-dir", type=Path, default=Path("./results"))
     ap.add_argument("--output-json", type=Path, default=None, help="Optional explicit JSON output path.")
     ap.add_argument(
+        "--variants",
+        nargs="+",
+        choices=ALL_VARIANTS,
+        default=list(DEFAULT_VARIANTS),
+        help=(
+            "Retrieval variants to evaluate together: dense, sbc, lec, "
+            "dense_lec, skillsight, skillsight_eq15."
+        ),
+    )
+    ap.add_argument(
         "--candidate-k",
         type=int,
         default=300,
@@ -91,7 +102,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
 
     args = ap.parse_args(argv)
-    args.variants = [VARIANT_SKILLSIGHT]
+    args.variants = list(dict.fromkeys(args.variants))
     return args
 
 
