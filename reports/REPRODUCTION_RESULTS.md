@@ -188,20 +188,26 @@ query-document background-energy gap is specific to the skill-retrieval setup.
 
 ## Single-GPU end-to-end smoke test
 
-The TheoremQA subset was run end-to-end with Qwen3-4B-Instruct-2507 on one
-RTX 4090:
+The five non-ToolQA SRA-Bench tasks were run end-to-end with
+Qwen3-4B-Instruct-2507 on one RTX 4090:
 
-| Item | Configuration/result |
-| --- | --- |
-| Retrieval | SkillSight, top-3, gold Hit@3 = 90.09% |
-| Task model | Qwen3-4B-Instruct-2507, BF16 |
-| Inference server | vLLM 0.31.0 |
-| Context limit | 16,384 tokens |
-| GPU memory utilization | 0.85 |
-| Maximum concurrent sequences | 8 |
-| API workers | 8 |
-| TheoremQA accuracy | 65.46% (489/747) |
-| Paper TheoremQA accuracy | 68.40% |
+| Task | Correct | Total | Reproduced accuracy | Paper accuracy | Difference |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| TheoremQA | 489 | 747 | 65.46% | 68.40% | -2.94 |
+| LogicBench | 598 | 760 | 78.68% | 80.53% | -1.85 |
+| MedCalc-Bench | 899 | 1,100 | 81.73% | 80.91% | +0.82 |
+| CHAMP | 169 | 223 | 75.78% | 73.99% | +1.79 |
+| BigCodeBench | 523 | 1,140 | 45.88% | 47.02% | -1.14 |
+| Overall | 2,678 | 3,970 | 67.46% | 68.36% | -0.91 |
+
+Configuration:
+
+- SkillSight top-3 retrieval followed by retrieval-only cache release;
+- Qwen3-4B-Instruct-2507 in BF16;
+- vLLM 0.31.0;
+- 16,384-token context;
+- GPU memory utilization 0.85;
+- at most 8 concurrent sequences and 8 API workers.
 
 The end-to-end pipeline is operational on a single 24 GB GPU by running retrieval
 first and inference second. The current SR-Agents inference JSON does not expose
