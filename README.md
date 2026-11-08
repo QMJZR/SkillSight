@@ -245,6 +245,19 @@ python -m SkillSight.analysis.hyperparameters \
   --output-dir ./analysis_output/hyperparameters_qwen3_sra
 ```
 
+Ordinary-text controls use the official BEIR archives:
+
+```bash
+bash scripts/download_beir.sh ./BEIR
+
+python -m SkillSight.analysis.ordinary_text \
+  --beir-root ./BEIR \
+  --encoder-preset qwen3 \
+  --max-seq-length 4096 \
+  --cache-dir ./cache \
+  --output-dir ./analysis_output/ordinary_text_qwen3
+```
+
 ```bash
 python -m SkillSight.cli \
   --benchmark sra \

@@ -168,6 +168,24 @@ K=300. The beta and small-rank choices are robust: differences among beta
 not justify replacing the paper defaults merely because two exploratory settings
 are a few hundredths of a point higher.
 
+## Ordinary-text controls
+
+ArguAna, FiQA, and SciFact were downloaded from the official BEIR archives and
+encoded with Qwen3 at a 4,096-token limit:
+
+| Dataset | Documents | Queries | Background rank | Mean document energy | Mean query energy | Documents above gold (%) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ArguAna | 7,376 | 1,406 | 3 | 0.280 | 0.232 | 0.39 |
+| FiQA | 57,638 | 648 | 2 | 0.266 | 0.191 | 0.14 |
+| SciFact | 5,183 | 300 | 3 | 0.321 | 0.253 | 0.41 |
+| SRA-Bench | 26,262 | 5,400 | 2 | 0.376 | 0.081 | 1.24 |
+
+The ordinary-text values reproduce the paper's qualitative comparison: their
+gold-above percentages fall in the reported 0.05-0.42 range, while SRA-Bench is
+materially harder at 1.24%. Their document/query energy ratios are 1.20-1.39,
+compared with 4.62 for SRA-Bench. This supports the claim that the asymmetric
+query-document background-energy gap is specific to the skill-retrieval setup.
+
 ## SkillBench-Supp status
 
 The current public SkillRouter benchmark contains:

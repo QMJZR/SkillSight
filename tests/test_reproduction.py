@@ -20,6 +20,7 @@ TEXT_MODEL = importlib.import_module(f"{ROOT.name}.text_model")
 BACKGROUND = importlib.import_module(f"{ROOT.name}.analysis.background_energy")
 RECALL_DEPTH = importlib.import_module(f"{ROOT.name}.analysis.recall_depth")
 HYPERPARAMETERS = importlib.import_module(f"{ROOT.name}.analysis.hyperparameters")
+ORDINARY = importlib.import_module(f"{ROOT.name}.analysis.ordinary_text")
 
 
 class ReproductionTests(unittest.TestCase):
@@ -166,6 +167,16 @@ class ReproductionTests(unittest.TestCase):
             header = path.read_text(encoding="utf-8").splitlines()[0]
             self.assertIn("candidate_k", header)
             self.assertIn("beta", header)
+
+    def test_skillrouter_qrels_parser(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "test.tsv"
+            path.write_text(
+                "query-id\tcorpus-id\tscore\nq1\td1\t1\nq1\td2\t0\nq2\td3\t2\n",
+                encoding="utf-8",
+            )
+            qrels = ORDINARY._read_qrels(path)
+            self.assertEqual(qrels, {"q1": {"d1": 1}, "q2": {"d3": 2}})
 
 
 if __name__ == "__main__":
