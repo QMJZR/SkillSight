@@ -82,6 +82,26 @@ reported `skillsight` path uses the legacy dispersion-weighted fusion
 The upstream default is therefore retained for reported main results. This is a
 paper/code consistency issue worth checking with the authors.
 
+## Background-energy analysis
+
+The SRA-Bench background-energy analysis was run for all three embedding models
+using the cached corpus and query embeddings:
+
+| Embedding | Background rank | Explained variance | Mean document energy | Mean query energy | Document/query ratio |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Qwen3 | 2 | 0.9335 | 0.3758 | 0.0813 | 4.62 |
+| SkillRouter | 18 | 0.8394 | 0.2558 | 0.1429 | 1.79 |
+| SkillRet | 16 | 0.8073 | 0.1675 | 0.0835 | 2.01 |
+
+All three encoders show the paper's directional effect: documents have
+substantially higher background energy than queries. Qwen3 shows the strongest
+gap, while the two skill-specific encoders allocate more of their representation
+to non-background capability information.
+
+Artifacts are under `analysis_output/background_energy_<model>_sra/`. Each run
+contains per-query and per-document energy CSV files, a summary JSON, an energy
+distribution plot, and a query-versus-document gap plot.
+
 ## SkillBench-Supp status
 
 The current public SkillRouter benchmark contains:

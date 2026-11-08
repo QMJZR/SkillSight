@@ -201,6 +201,27 @@ python -m SkillSight.cli \
   --variants dense skillsight
 ```
 
+### Background-Energy Analysis
+
+After caching corpus and query embeddings, reproduce the query/document
+background-energy diagnostics without running either encoder again:
+
+```bash
+python -m SkillSight.analysis.background_energy \
+  --encoder-preset qwen3 \
+  --cache-dir ./cache \
+  --text-cache-dir ./results/ablations/cache \
+  --output-dir ./analysis_output/background_energy_qwen3_sra
+```
+
+The analysis writes:
+
+- `summary.json`;
+- `query_energy.csv`;
+- `document_energy.csv`;
+- `figures/background_energy_distribution.png`;
+- `figures/background_energy_gap.png`.
+
 ```bash
 python -m SkillSight.cli \
   --benchmark sra \

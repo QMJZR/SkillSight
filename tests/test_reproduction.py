@@ -16,6 +16,7 @@ CONSTANTS = importlib.import_module(f"{ROOT.name}.constants")
 CACHE = importlib.import_module(f"{ROOT.name}.cache")
 RETRIEVER = importlib.import_module(f"{ROOT.name}.retriever")
 TEXT_MODEL = importlib.import_module(f"{ROOT.name}.text_model")
+BACKGROUND = importlib.import_module(f"{ROOT.name}.analysis.background_energy")
 
 
 class ReproductionTests(unittest.TestCase):
@@ -127,6 +128,12 @@ class ReproductionTests(unittest.TestCase):
             final_k=1,
         )
         self.assertEqual(list(results), [CONSTANTS.VARIANT_SKILLSIGHT])
+
+    def test_background_energy_is_squared_projection(self) -> None:
+        vectors = np.asarray([[0.0, 1.0], [1.0, 0.0]], dtype=np.float32)
+        basis = np.asarray([[0.0], [1.0]], dtype=np.float32)
+        values = BACKGROUND.background_energy(vectors, basis)
+        np.testing.assert_allclose(values, [1.0, 0.0])
 
 
 if __name__ == "__main__":
