@@ -186,6 +186,28 @@ materially harder at 1.24%. Their document/query energy ratios are 1.20-1.39,
 compared with 4.62 for SRA-Bench. This supports the claim that the asymmetric
 query-document background-energy gap is specific to the skill-retrieval setup.
 
+## Single-GPU end-to-end smoke test
+
+The TheoremQA subset was run end-to-end with Qwen3-4B-Instruct-2507 on one
+RTX 4090:
+
+| Item | Configuration/result |
+| --- | --- |
+| Retrieval | SkillSight, top-3, gold Hit@3 = 90.09% |
+| Task model | Qwen3-4B-Instruct-2507, BF16 |
+| Inference server | vLLM 0.31.0 |
+| Context limit | 16,384 tokens |
+| GPU memory utilization | 0.85 |
+| Maximum concurrent sequences | 8 |
+| API workers | 8 |
+| TheoremQA accuracy | 65.46% (489/747) |
+| Paper TheoremQA accuracy | 68.40% |
+
+The end-to-end pipeline is operational on a single 24 GB GPU by running retrieval
+first and inference second. The current SR-Agents inference JSON does not expose
+per-request latency and token metadata, so the summary reports retrieval latency
+only; task latency and token counts are left blank rather than fabricated.
+
 ## SkillBench-Supp status
 
 The current public SkillRouter benchmark contains:
