@@ -70,7 +70,10 @@ for p in (PACKAGE_PARENT, SR_AGENTS_SRC):
     if p.exists() and str(p) not in sys.path:
         sys.path.insert(0, str(p))
 
-from SkillSight.constants import LEXICAL_BETA
+try:
+    from .constants import LEXICAL_BETA
+except ImportError:  # Direct script execution in the upstream checkout.
+    from SkillSight.constants import LEXICAL_BETA
 
 
 DEFAULT_DATASETS = [
@@ -462,6 +465,7 @@ def run_infer_and_eval(
     engine = "react" if dataset == "toolqa" else "direct"
 
     if args.overwrite or not infer_out.exists():
+        workers = args.workers or WORKERS_BY_ENGINE.get(engine, 32)
         infer_cmd = [
             sys.executable, "-m", "sragents.cli.main", "infer",
             "--instances", str(instances_path),
@@ -473,7 +477,7 @@ def run_infer_and_eval(
             "--provider-arg", f"k={top_k}",
             "--engine", engine,
             "--label", tag,
-            "--workers", str(WORKERS_BY_ENGINE.get(engine, 32)),
+            "--workers", str(workers),
         ]
         if args.overwrite:
             infer_cmd.append("--force")
@@ -633,7 +637,7 @@ def write_per_sample_csv(results: List[Dict[str, Any]], output_path: Path) -> No
 # CLI
 # ---------------------------------------------------------------------------
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv=None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="End-to-end SkillSight-retrieval task accuracy on SRA-Bench.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -645,10 +649,10 @@ def parse_args() -> argparse.Namespace:
                    help="OpenAI-compatible endpoint (vLLM).")
 
     # Retrieval (SkillSight)
-    p.add_argument("--embed-model-path", default="./models/Qwen3-Embedding-0.6B",
+    p.add_argument("--embed-model-path", default=str(HERE / "models" / "Qwen3-Embedding-0.6B"),
                    help="Dense encoder used by SkillSight retrieval.")
-    p.add_argument("--device", default="cuda:3",
-                   help="Device for the SkillSight encoder (kept off vLLM's GPU).")
+    p.add_argument("--device", default="cuda:0",
+                   help="Device for the SkillSight encoder.")
     p.add_argument("--candidate-k", type=int, default=300,
                    help="Candidate depth for SkillSight's dense+invariant rerank union.")
     p.add_argument("--max-tokens-per-doc", type=int, default=200,
@@ -667,6 +671,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--datasets", nargs="+", default=DEFAULT_DATASETS)
     p.add_argument("--top-ks", nargs="+", type=int, default=DEFAULT_TOP_KS,
                    help="Top-K skill counts to inject and evaluate.")
+    p.add_argument("--workers", type=int, default=None,
+                   help="Parallel inference workers. Defaults: direct=32, react=8.")
     p.add_argument("--output-root", type=Path,
                    default=HERE / "results" / "skillsight_e2e")
 
@@ -675,11 +681,14 @@ def parse_args() -> argparse.Namespace:
                    help="Redo inference/eval even if outputs exist.")
     p.add_argument("--reuse-retrieval", action="store_true",
                    help="Reuse an existing retrieval JSON instead of re-retrieving.")
+    p.add_argument("--retrieval-only", action="store_true",
+                   help="Only generate retrieval JSON, then exit without starting or calling vLLM. "
+                        "Use this first on a single-GPU host.")
     p.add_argument("--no-start-vllm", action="store_true",
                    help="Do not launch vllm.sh; assume the server is already up.")
     p.add_argument("--skip-server-check", action="store_true",
                    help="Skip waiting for the vLLM /models endpoint.")
-    return p.parse_args()
+    return p.parse_args(argv)
 
 
 def main() -> None:
@@ -693,12 +702,11 @@ def main() -> None:
     max_k = max(top_ks)
 
     # ---- Stage 0: vLLM ----
-    if not args.no_start_vllm:
-        maybe_launch_vllm(HERE, args.api_base)
-    if not args.skip_server_check:
-        wait_for_openai_server(args.api_base)
-
-    subprocess_env = build_subprocess_env()
+    if not args.retrieval_only:
+        if not args.no_start_vllm:
+            maybe_launch_vllm(HERE, args.api_base)
+        if not args.skip_server_check:
+            wait_for_openai_server(args.api_base)
 
     # ---- Stage 1: SkillSight retrieval (once per dataset, at K=max) ----
     retrieval_paths: Dict[str, Path] = {}
@@ -723,6 +731,14 @@ def main() -> None:
             torch.cuda.empty_cache()
     except Exception:  # noqa: BLE001
         pass
+
+    if args.retrieval_only:
+        print("[done] retrieval-only stage complete.", flush=True)
+        for dataset, path in retrieval_paths.items():
+            print(f"[done] {dataset}: {path}", flush=True)
+        return
+
+    subprocess_env = build_subprocess_env()
 
     # ---- Stage 2/3: infer + evaluate per (dataset, K) ----
     results: List[Dict[str, Any]] = []

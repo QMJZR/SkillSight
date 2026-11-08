@@ -270,6 +270,41 @@ python -m SkillSight.cli \
 
 The end-to-end experiment retrieves the top three skills, inserts them into the agent context, and evaluates task execution on SRA-Bench. It requires a separate vLLM environment and the SR-Agents evaluation code.
 
+For a single GPU, run retrieval and inference sequentially so the embedding and
+task models are never resident at the same time:
+
+```bash
+# 1. Create retrieval results without loading a task model.
+python -m SkillSight.eval_skillsight_e2e \
+  --retrieval-only \
+  --device cuda:0 \
+  --datasets theoremqa \
+  --top-ks 3 \
+  --output-root ./results/skillsight_e2e_qwen4b
+
+# 2. Start Qwen3-4B after retrieval has exited.
+VLLM_PY=/root/envs/vllm310/bin/python \
+VLLM_MODEL_PATH=/root/SkillSight/models/Qwen3-4B-Instruct-2507 \
+VLLM_SERVED_NAME=Qwen3-4B-Instruct-2507 \
+VLLM_GPU=0 VLLM_MAX_LEN=16384 \
+VLLM_GPU_UTIL=0.85 VLLM_MAX_NUM_SEQS=8 \
+bash vllm.sh
+
+# 3. Reuse retrieval results for inference and evaluation.
+python -m SkillSight.eval_skillsight_e2e \
+  --model Qwen3-4B-Instruct-2507 \
+  --api-base http://127.0.0.1:8001/v1 \
+  --reuse-retrieval \
+  --no-start-vllm \
+  --workers 8 \
+  --datasets theoremqa \
+  --top-ks 3 \
+  --output-root ./results/skillsight_e2e_qwen4b
+```
+
+`scripts/setup_vllm.sh` installs `g++`, required on first use by FlashInfer for
+JIT kernel compilation.
+
 ### 1. Start the task model
 
 Use a GPU different from the one used by the embedding model.

@@ -21,6 +21,7 @@ BACKGROUND = importlib.import_module(f"{ROOT.name}.analysis.background_energy")
 RECALL_DEPTH = importlib.import_module(f"{ROOT.name}.analysis.recall_depth")
 HYPERPARAMETERS = importlib.import_module(f"{ROOT.name}.analysis.hyperparameters")
 ORDINARY = importlib.import_module(f"{ROOT.name}.analysis.ordinary_text")
+E2E = importlib.import_module(f"{ROOT.name}.eval_skillsight_e2e")
 
 
 class ReproductionTests(unittest.TestCase):
@@ -177,6 +178,13 @@ class ReproductionTests(unittest.TestCase):
             )
             qrels = ORDINARY._read_qrels(path)
             self.assertEqual(qrels, {"q1": {"d1": 1}, "q2": {"d3": 2}})
+
+    def test_end_to_end_single_gpu_retrieval_only_args(self) -> None:
+        args = E2E.parse_args(["--retrieval-only", "--datasets", "theoremqa"])
+        self.assertTrue(args.retrieval_only)
+        self.assertEqual(args.datasets, ["theoremqa"])
+        self.assertEqual(args.device, "cuda:0")
+        self.assertTrue(Path(args.embed_model_path).is_absolute())
 
 
 if __name__ == "__main__":
