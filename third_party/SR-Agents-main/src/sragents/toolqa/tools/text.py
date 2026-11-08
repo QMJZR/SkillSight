@@ -11,12 +11,16 @@ new tensors).
 """
 
 import json
+import os
 import threading
 from pathlib import Path
 
 import numpy as np
 
-EMBED_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+EMBED_MODEL_NAME = os.environ.get(
+    "TOOLQA_EMBED_MODEL",
+    "sentence-transformers/all-mpnet-base-v2",
+)
 
 # Process-level cache: (corpus_path, text_field) -> TextRetriever (shared)
 _retriever_cache: dict[tuple[str, str], "TextRetriever"] = {}

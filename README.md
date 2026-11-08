@@ -344,6 +344,19 @@ third_party/SR-Agents-main/data/external/toolqa/
 
 Do not add an extra `external_corpus/` directory level.
 
+For single-GPU ToolQA runs, keep the Agent on vLLM and force ToolQA's local
+Agenda/SciREX retrieval index onto the CPU:
+
+```bash
+CUDA_VISIBLE_DEVICES="" \
+TOOLQA_EMBED_MODEL=/root/SkillSight/models/all-mpnet-base-v2 \
+OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+python -m SkillSight.eval_skillsight_e2e ... --workers 4
+```
+
+The local `sentence-transformers/all-mpnet-base-v2` checkpoint is required when
+`HF_HUB_OFFLINE=1`.
+
 ### 3. Run the end-to-end pipeline
 
 From the directory containing the `SkillSight/` repository, run:
