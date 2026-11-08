@@ -133,6 +133,41 @@ The mean percentage of documents ranked above the best gold skill is 1.240% for
 Dense and 0.220% for SBC. The Dense value matches the paper's reported SRA-Bench
 value of 1.24%.
 
+## Hyperparameter sensitivity
+
+Qwen3 SRA-Bench sensitivity results:
+
+| Candidate K | R@10 | MRR@10 |
+| ---: | ---: | ---: |
+| 50 | 84.05 | 72.83 |
+| 100 | 85.45 | 73.50 |
+| 200 | 85.87 | 73.72 |
+| 300 | 86.13 | 73.88 |
+| 500 | 86.28 | 73.85 |
+
+Lexical beta:
+
+| Beta | R@10 | MRR@10 |
+| ---: | ---: | ---: |
+| 0.0 | 86.30 | 74.04 |
+| 0.5 | 86.21 | 73.93 |
+| 1.0 | 86.13 | 73.88 |
+
+Background rank:
+
+| Rank | R@10 | MRR@10 |
+| ---: | ---: | ---: |
+| 1 | 85.87 | 73.52 |
+| 2 (default) | 86.13 | 73.88 |
+| 4 | 86.26 | 73.84 |
+| 8 | 85.46 | 73.43 |
+
+Candidate depth has the largest effect, with most gains already saturated near
+K=300. The beta and small-rank choices are robust: differences among beta
+0/0.5/1 and rank 1/2/4 are small, while rank 8 degrades recall. These results do
+not justify replacing the paper defaults merely because two exploratory settings
+are a few hundredths of a point higher.
+
 ## SkillBench-Supp status
 
 The current public SkillRouter benchmark contains:

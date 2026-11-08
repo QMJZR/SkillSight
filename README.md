@@ -237,6 +237,12 @@ python -m SkillSight.analysis.recall_depth \
   --cache-dir ./cache \
   --text-cache-dir ./results/ablations/cache \
   --output-dir ./analysis_output/recall_depth_qwen3_sra
+
+python -m SkillSight.analysis.hyperparameters \
+  --encoder-preset qwen3 \
+  --cache-dir ./cache \
+  --text-cache-dir ./results/ablations/cache \
+  --output-dir ./analysis_output/hyperparameters_qwen3_sra
 ```
 
 ```bash

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -18,6 +19,7 @@ RETRIEVER = importlib.import_module(f"{ROOT.name}.retriever")
 TEXT_MODEL = importlib.import_module(f"{ROOT.name}.text_model")
 BACKGROUND = importlib.import_module(f"{ROOT.name}.analysis.background_energy")
 RECALL_DEPTH = importlib.import_module(f"{ROOT.name}.analysis.recall_depth")
+HYPERPARAMETERS = importlib.import_module(f"{ROOT.name}.analysis.hyperparameters")
 
 
 class ReproductionTests(unittest.TestCase):
@@ -140,6 +142,30 @@ class ReproductionTests(unittest.TestCase):
         scores = np.asarray([0.9, 0.8, 0.7, 0.6], dtype=np.float32)
         self.assertEqual(RECALL_DEPTH.rank_of_best_gold(scores, np.asarray([1, 3])), 2)
         self.assertEqual(RECALL_DEPTH.rank_of_best_gold(scores, np.asarray([], dtype=np.int64)), 5)
+
+    def test_ranked_background_basis_is_orthonormal(self) -> None:
+        rng = np.random.default_rng(7)
+        stats = TEXT_MODEL.TextStats(
+            doc_tokens=[],
+            df={},
+            idf={},
+            generic_tokens=set(),
+            token_to_generic_index={},
+            generic_token_matrix=rng.normal(size=(5, 4)).astype(np.float32),
+            corpus_mean=np.ones(4, dtype=np.float32),
+            idf_threshold=0.0,
+        )
+        basis = HYPERPARAMETERS.ranked_background_basis(stats, 2)
+        self.assertEqual(basis.shape, (4, 2))
+        np.testing.assert_allclose(basis.T @ basis, np.eye(2), atol=1e-5)
+
+    def test_hyperparameter_csv_accepts_different_parameter_columns(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "details.csv"
+            HYPERPARAMETERS._write_csv(path, [{"candidate_k": 50}, {"beta": 1.0}])
+            header = path.read_text(encoding="utf-8").splitlines()[0]
+            self.assertIn("candidate_k", header)
+            self.assertIn("beta", header)
 
 
 if __name__ == "__main__":
