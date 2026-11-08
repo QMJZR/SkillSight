@@ -188,8 +188,8 @@ query-document background-energy gap is specific to the skill-retrieval setup.
 
 ## Single-GPU end-to-end smoke test
 
-The five non-ToolQA SRA-Bench tasks were run end-to-end with
-Qwen3-4B-Instruct-2507 on one RTX 4090:
+All six SRA-Bench tasks were run end-to-end with Qwen3-4B-Instruct-2507 on one
+RTX 4090:
 
 | Task | Correct | Total | Reproduced accuracy | Paper accuracy | Difference |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -198,7 +198,8 @@ Qwen3-4B-Instruct-2507 on one RTX 4090:
 | MedCalc-Bench | 899 | 1,100 | 81.73% | 80.91% | +0.82 |
 | CHAMP | 169 | 223 | 75.78% | 73.99% | +1.79 |
 | BigCodeBench | 523 | 1,140 | 45.88% | 47.02% | -1.14 |
-| Overall | 2,678 | 3,970 | 67.46% | 68.36% | -0.91 |
+| ToolQA | 563 | 1,430 | 39.37% | 41.05% | -1.68 |
+| Overall | 3,241 | 5,400 | 60.02% | 61.13% | -1.11 |
 
 Configuration:
 
@@ -207,7 +208,9 @@ Configuration:
 - vLLM 0.31.0;
 - 16,384-token context;
 - GPU memory utilization 0.85;
-- at most 8 concurrent sequences and 8 API workers.
+- at most 8 concurrent sequences and 8 API workers for direct tasks;
+- ToolQA used 24,576-token context, 4 React workers, and a CPU-local
+  `all-mpnet-base-v2` Agenda/SciREX index.
 
 The end-to-end pipeline is operational on a single 24 GB GPU by running retrieval
 first and inference second. The current SR-Agents inference JSON does not expose
