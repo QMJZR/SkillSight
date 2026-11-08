@@ -17,6 +17,7 @@ CACHE = importlib.import_module(f"{ROOT.name}.cache")
 RETRIEVER = importlib.import_module(f"{ROOT.name}.retriever")
 TEXT_MODEL = importlib.import_module(f"{ROOT.name}.text_model")
 BACKGROUND = importlib.import_module(f"{ROOT.name}.analysis.background_energy")
+RECALL_DEPTH = importlib.import_module(f"{ROOT.name}.analysis.recall_depth")
 
 
 class ReproductionTests(unittest.TestCase):
@@ -134,6 +135,11 @@ class ReproductionTests(unittest.TestCase):
         basis = np.asarray([[0.0], [1.0]], dtype=np.float32)
         values = BACKGROUND.background_energy(vectors, basis)
         np.testing.assert_allclose(values, [1.0, 0.0])
+
+    def test_best_gold_rank(self) -> None:
+        scores = np.asarray([0.9, 0.8, 0.7, 0.6], dtype=np.float32)
+        self.assertEqual(RECALL_DEPTH.rank_of_best_gold(scores, np.asarray([1, 3])), 2)
+        self.assertEqual(RECALL_DEPTH.rank_of_best_gold(scores, np.asarray([], dtype=np.int64)), 5)
 
 
 if __name__ == "__main__":

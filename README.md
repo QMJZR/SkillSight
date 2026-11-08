@@ -222,6 +222,23 @@ The analysis writes:
 - `figures/background_energy_distribution.png`;
 - `figures/background_energy_gap.png`.
 
+Token evidence and recall-depth analyses also reuse cached corpus statistics:
+
+```bash
+python -m SkillSight.analysis.token_evidence \
+  --benchmark sra \
+  --encoder-preset qwen3 \
+  --cache-dir ./cache \
+  --text-cache-dir ./results/ablations/cache \
+  --output-dir ./analysis_output/token_evidence_qwen3_sra
+
+python -m SkillSight.analysis.recall_depth \
+  --encoder-preset qwen3 \
+  --cache-dir ./cache \
+  --text-cache-dir ./results/ablations/cache \
+  --output-dir ./analysis_output/recall_depth_qwen3_sra
+```
+
 ```bash
 python -m SkillSight.cli \
   --benchmark sra \
