@@ -16,6 +16,33 @@ DEFAULT_DATASETS = [
     "bigcodebench",
 ]
 DEFAULT_TOP_K = [1, 3, 5, 10, 20, 50]
+SKILLROUTER_TIERS = ("easy", "hard")
+
+# Encoder-specific defaults follow each checkpoint's published inference setup.
+ENCODER_PRESETS = {
+    "qwen3": {
+        "model_path": "models/Qwen3-Embedding-0.6B",
+        "max_seq_length": 32768,
+        "doc_batch": 4,
+        "query_batch": 64,
+        "score_batch": 64,
+    },
+    "skillrouter": {
+        "model_path": "models/SkillRouter-Embedding-0.6B",
+        "max_seq_length": 4096,
+        "doc_batch": 16,
+        "query_batch": 32,
+        "score_batch": 32,
+    },
+    "skillret": {
+        "model_path": "models/SKILLRET-Embedding-0.6B",
+        "max_seq_length": 8192,
+        "doc_batch": 16,
+        "query_batch": 32,
+        "score_batch": 32,
+    },
+}
+DEFAULT_ENCODER_PRESET = "qwen3"
 
 # Structural constants used by SkillSight's corpus-level text model.
 # Default token cap per document; overridable via the --max-tokens-per-doc CLI flag.

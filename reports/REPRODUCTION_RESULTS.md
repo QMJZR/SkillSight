@@ -1,0 +1,147 @@
+# SkillSight Reproduction Results
+
+Experiment date: 2026-11-08
+
+This report records the offline retrieval experiments run against the public
+SkillSight implementation and the checkpoints available on that date. Search
+metrics are percentages. `R@10`, `H@5`, and `MRR@10` denote Recall@10, Hit@5,
+and MRR@10 respectively.
+
+## Sources and environment
+
+- Paper: SkillSight, arXiv:2607.18785v3
+- Upstream code revision: `0e3ac863a161501a46149c46f59ddf7960e2c71f`
+- Python: 3.11.18
+- PyTorch: 2.6.0+cu124
+- sentence-transformers: 5.5.1
+- NumPy: 2.4.6
+- GPU: NVIDIA GeForce RTX 4090, 24 GB
+
+External artifacts:
+
+| Artifact | Hugging Face revision |
+| --- | --- |
+| `WeihangSu/SRA-Bench` | `6143f2634eb284955ce312213bac24b582d039f3` |
+| `pipizhao/SkillRouter-Eval-Core` | `20a03920e7f08d76b67af367350d25ef4468198e` |
+| `Qwen/Qwen3-Embedding-0.6B` | `97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3` |
+| `pipizhao/SkillRouter-Embedding-0.6B` | `c03c9bcee9fce92ab0262bb6dcf54d174a8ba558` |
+| `ThakiCloud/SKILLRET-Embedding-0.6B` | `67f1594c46c40e13a5eb2f4092cc85c98c9ed32d` |
+
+## SRA-Bench main result
+
+The main SkillSight result is close to the paper:
+
+| Embedding | Method | Paper R@10 | Reproduced R@10 | Difference |
+| --- | --- | ---: | ---: | ---: |
+| Qwen3 | Dense | 66.02 | 66.09 | +0.07 |
+| Qwen3 | SkillSight | 86.23 | 86.13 | -0.10 |
+| SkillRouter | Dense | 58.01 | 58.25 | +0.24 |
+| SkillRouter | SkillSight | 79.81 | 79.87 | +0.06 |
+| SkillRet | Dense | 78.21 | 78.37 | +0.16 |
+| SkillRet | SkillSight | 86.42 | 85.68 | -0.74 |
+
+Encoder settings follow the published checkpoints:
+
+- Qwen3: 32,768 tokens
+- SkillRouter: 4,096 tokens
+- SkillRet: 8,192 tokens
+
+The SkillRouter checkpoint is distributed as native Transformers weights, rather
+than as a SentenceTransformer directory. The reproduction adds automatic
+detection for this format, left padding, last-token pooling, BF16 inference, and
+the checkpoint's query instruction.
+
+## SRA-Bench ablation
+
+All variants use Qwen3-Embedding-0.6B, a candidate depth of 300, and lexical
+`beta=1`:
+
+| Method | Paper R@10 | Reproduced R@10 |
+| --- | ---: | ---: |
+| Dense | 66.02 | 66.09 |
+| Dense + LEC | 79.76 | 79.85 |
+| SBC only | 78.23 | 78.37 |
+| LEC only | 71.46 | 72.95 |
+| SkillSight | 86.23 | 86.13 |
+
+`lec` is implemented as a lexical-only diagnostic over the dense top-K
+candidates. The paper does not fully specify the candidate construction for its
+lexical-only row, so the 1.49-point difference should be treated as an unresolved
+implementation detail rather than tuned away.
+
+The paper text describes Eq. 15 as
+`z(s_perp) + [z(s_lex)]_+`, represented by `skillsight_eq15`. The upstream code's
+reported `skillsight` path uses the legacy dispersion-weighted fusion
+(`lam=None`). On SRA-Bench:
+
+| Variant | R@10 | MRR@10 |
+| --- | ---: | ---: |
+| `skillsight` (upstream default) | 86.13 | 73.88 |
+| `skillsight_eq15` (`lam=1`) | 86.04 | 71.43 |
+
+The upstream default is therefore retained for reported main results. This is a
+paper/code consistency issue worth checking with the authors.
+
+## SkillBench-Supp status
+
+The current public SkillRouter benchmark contains:
+
+- 87 tasks;
+- 75 scored tasks after the documented filters;
+- 78,361 Easy skills;
+- 79,141 Hard skills.
+
+The paper describes approximately 77k candidates. The current SkillSight
+implementation evaluates the union of tiers, which equals the Hard pool.
+
+| Configuration | Method | H@5 | R@10 | MRR@10 |
+| --- | --- | ---: | ---: | ---: |
+| Paper | Dense | 75.34 | 56.56 | 66.67 |
+| Paper | SkillSight | 76.71 | 64.24 | 67.28 |
+| Hard, 75 tasks | Dense | 73.33 | 55.48 | 64.14 |
+| Hard, 75 tasks | SkillSight | 72.00 | 61.29 | 62.64 |
+| Easy, 75 tasks | Dense | 76.00 | 58.33 | 67.11 |
+| Easy, 75 tasks | SkillSight | 73.33 | 63.68 | 67.42 |
+
+The Easy setting gives the closest SkillSight R@10 and MRR, while Hard gives a
+closer Dense R@10. No evaluated configuration exactly reproduces all reported
+SkillBench metrics. Gold-skill OOV count is zero in every run. The most likely
+remaining cause is a difference between the paper's candidate-pool snapshot and
+the current public revision.
+
+## Reproduction commands
+
+SRA-Bench with an encoder preset:
+
+```bash
+cd /root
+python -m SkillSight.cli \
+  --benchmark sra \
+  --repo-root ./SkillSight/third_party/SR-Agents-main \
+  --encoder-preset skillrouter \
+  --cache-dir ./SkillSight/cache \
+  --output-dir ./SkillSight/results/sra_skillrouter \
+  --variants dense skillsight
+```
+
+SkillBench tier evaluation:
+
+```bash
+cd /root
+python -m SkillSight.cli \
+  --benchmark skillrouter \
+  --skillrouter-root ./SkillSight/SkillRouter-Eval-Core \
+  --skillrouter-tiers easy \
+  --include-excluded \
+  --encoder-preset qwen3 \
+  --output-dir ./SkillSight/results/skillbench_easy
+```
+
+## Reproduction assessment
+
+- SRA-Bench main method: reproduced within 0.10 R@10 points for Qwen3.
+- SkillRouter generalization: reproduced within 0.06 R@10 points.
+- SkillRet generalization: reproduced within 0.74 R@10 points.
+- SRA ablation: Dense, Dense+LEC, and SBC-only are within 0.14 points.
+- SkillBench-Supp: implementation runs successfully, but the public data snapshot
+  does not reproduce every paper metric.

@@ -300,20 +300,32 @@ def _load_skillrouter_payloads(args, dataset_payloads: Dict[str, dict]) -> Optio
         sys.exit(f"SkillRouter-Eval-Core root not found: {root}")
 
     print(f"[load] SkillRouter-Eval-Core: {root} (pool=all)", flush=True)
-    doc_texts, skill_ids = load_skillrouter_corpus(root)
+    tiers = tuple(getattr(args, "skillrouter_tiers", ("easy", "hard")))
+    doc_texts, skill_ids = load_skillrouter_corpus(root, tiers=tiers)
     examples = load_skillrouter_examples(
         root,
         exclude_generic_only=not args.include_generic_only,
         include_excluded=getattr(args, "include_excluded", False),
     )
     print(f"[load] corpus={len(skill_ids)} queries={len(examples)}", flush=True)
-    print(f"[config] benchmark=skillrouter variants={args.variants}", flush=True)
+    print(
+        f"[config] benchmark=skillrouter tiers={list(tiers)} variants={args.variants}",
+        flush=True,
+    )
     print(f"[config] top_k={args.top_k} candidate_k={args.candidate_k}", flush=True)
 
     tag = model_tag(args.model_path)
     encoder: Optional[DenseEncoder] = None
 
-    doc_cache_paths = [args.cache_dir / f"skillrouter_all_{tag}_{args.max_seq_length}.npy"]
+    tier_tag = "all" if set(tiers) == {"easy", "hard"} else "_".join(tiers)
+    doc_cache_paths = candidate_embedding_cache_paths(
+        cache_dir=args.cache_dir,
+        kind="doc_all",
+        dataset=f"skillrouter_{tier_tag}",
+        model_path=args.model_path,
+        max_seq_length=args.max_seq_length,
+        ids_or_texts=skill_ids,
+    )
     doc_embeddings, encoder = load_or_encode_embeddings(
         encoder=encoder,
         texts=doc_texts,

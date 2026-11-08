@@ -9,13 +9,14 @@ from typing import Sequence
 from .constants import (
     ALL_VARIANTS,
     DEFAULT_DATASETS,
-    DEFAULT_MAX_SEQ_LENGTH,
-    DEFAULT_MODEL_PATH,
+    DEFAULT_ENCODER_PRESET,
     DEFAULT_TOP_K,
     DEFAULT_VARIANTS,
+    ENCODER_PRESETS,
     LEXICAL_BETA,
     MAX_TOKENS_PER_DOC,
     REPO_ROOT_DEFAULT,
+    SKILLROUTER_TIERS,
 )
 from .evaluation import run_evaluation
 
@@ -43,6 +44,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="SkillRouter-Eval-Core dataset root (used when --benchmark skillrouter).",
     )
     ap.add_argument(
+        "--skillrouter-tiers",
+        nargs="+",
+        choices=SKILLROUTER_TIERS,
+        default=list(SKILLROUTER_TIERS),
+        help="SkillRouter candidate tiers. The upstream benchmark reports Easy and Hard separately.",
+    )
+    ap.add_argument(
         "--include-generic-only",
         action="store_true",
         help="SkillRouter only: keep generic_only tasks (default: drop them).",
@@ -56,15 +64,21 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "recovers the official 75-task set (73 + 2 excluded)."
         ),
     )
-    ap.add_argument("--model-path", type=str, default=DEFAULT_MODEL_PATH)
+    ap.add_argument(
+        "--encoder-preset",
+        choices=tuple(ENCODER_PRESETS),
+        default=DEFAULT_ENCODER_PRESET,
+        help="Apply the published model path and maximum sequence length for a known checkpoint.",
+    )
+    ap.add_argument("--model-path", type=str, default=None)
     ap.add_argument("--device", type=str, default="cuda:0")
     ap.add_argument("--datasets", nargs="+", default=DEFAULT_DATASETS)
     ap.add_argument("--top-k", nargs="+", type=int, default=DEFAULT_TOP_K)
     ap.add_argument("--primary-k", type=int, default=10)
-    ap.add_argument("--doc-batch", type=int, default=4)
-    ap.add_argument("--query-batch", type=int, default=64)
-    ap.add_argument("--score-batch", type=int, default=64)
-    ap.add_argument("--max-seq-length", type=int, default=DEFAULT_MAX_SEQ_LENGTH)
+    ap.add_argument("--doc-batch", type=int, default=None)
+    ap.add_argument("--query-batch", type=int, default=None)
+    ap.add_argument("--score-batch", type=int, default=None)
+    ap.add_argument("--max-seq-length", type=int, default=None)
     ap.add_argument(
         "--max-tokens-per-doc",
         type=int,
@@ -102,7 +116,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
 
     args = ap.parse_args(argv)
+    preset = ENCODER_PRESETS[args.encoder_preset]
+    if args.model_path is None:
+        package_root = Path(__file__).resolve().parent
+        args.model_path = str((package_root / preset["model_path"]).resolve())
+    for field in ("max_seq_length", "doc_batch", "query_batch", "score_batch"):
+        if getattr(args, field) is None:
+            setattr(args, field, preset[field])
     args.variants = list(dict.fromkeys(args.variants))
+    args.skillrouter_tiers = list(dict.fromkeys(args.skillrouter_tiers))
     return args
 
 

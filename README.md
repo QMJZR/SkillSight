@@ -136,9 +136,11 @@ python -m cli \
 | Argument | Description | Default |
 | --- | --- | --- |
 | `--benchmark` | `sra` or `skillrouter` | `sra` |
+| `--encoder-preset` | Published model/path, sequence length, and batch defaults | `qwen3` |
 | `--model-path` | Local embedding model | `./models/Qwen3-Embedding-0.6B` |
 | `--device` | Encoding and scoring device | `cuda:0` |
 | `--datasets` | SRA-Bench task families | all six families |
+| `--skillrouter-tiers` | SkillRouter candidate tiers | `easy hard` |
 | `--top-k` | Evaluation cutoffs | `1 3 5 10 20 50` |
 | `--candidate-k` | Candidate depth before calibration | `300` |
 | `--lexical-beta` | Lexical calibration strength | `1.0` |
@@ -188,26 +190,22 @@ provide a SentenceTransformer configuration. This is required for the public
 left padding, BF16 inference, and the query instruction documented by its model
 card.
 
-Use the checkpoint's published maximum sequence length when comparing specialized
-encoders:
+Use the checkpoint presets to apply their published maximum sequence length,
+model path, and recommended batch sizes:
 
 ```bash
-# SkillRouter: 4,096 tokens
 python -m SkillSight.cli \
   --benchmark sra \
   --repo-root ./third_party/SR-Agents-main \
-  --model-path ./models/SkillRouter-Embedding-0.6B \
-  --max-seq-length 4096 \
-  --doc-batch 16 \
+  --encoder-preset skillrouter \
   --variants dense skillsight
+```
 
-# SkillRet: 8,192 tokens
+```bash
 python -m SkillSight.cli \
   --benchmark sra \
   --repo-root ./third_party/SR-Agents-main \
-  --model-path ./models/SKILLRET-Embedding-0.6B \
-  --max-seq-length 8192 \
-  --doc-batch 16 \
+  --encoder-preset skillret \
   --variants dense skillsight
 ```
 

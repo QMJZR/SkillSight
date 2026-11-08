@@ -12,6 +12,15 @@ from .encoder import DenseEncoder
 from .utils import hash_strings, l2_normalize, model_tag, stable_hash
 
 
+def _same_model_path(expected: str, actual: str) -> bool:
+    if expected == actual:
+        return True
+    try:
+        return Path(expected).resolve() == Path(actual).resolve()
+    except OSError:
+        return False
+
+
 def load_cached_embeddings_if_valid(
     cache_path: Path,
     texts: Sequence[str],
@@ -66,7 +75,7 @@ def load_cached_embeddings_if_valid(
             if int(meta.get("max_seq_length")) != int(max_seq_length):
                 return None
         if model_path is not None and meta.get("model_path") is not None:
-            if str(meta.get("model_path")) != str(model_path):
+            if not _same_model_path(str(meta.get("model_path")), str(model_path)):
                 return None
     elif strict_text_hash:
         return None
