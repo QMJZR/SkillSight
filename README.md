@@ -180,6 +180,37 @@ The default remains `skillsight`, so existing commands reproduce the original
 reported behavior. Corpus and query embeddings are reused when their caches are
 present, so adding variants does not require re-encoding the corpus.
 
+### Cross-Encoder Evaluation
+
+`DenseEncoder` also supports Transformer-only embedding checkpoints that do not
+provide a SentenceTransformer configuration. This is required for the public
+`pipizhao/SkillRouter-Embedding-0.6B` checkpoint, which uses last-token pooling,
+left padding, BF16 inference, and the query instruction documented by its model
+card.
+
+Use the checkpoint's published maximum sequence length when comparing specialized
+encoders:
+
+```bash
+# SkillRouter: 4,096 tokens
+python -m SkillSight.cli \
+  --benchmark sra \
+  --repo-root ./third_party/SR-Agents-main \
+  --model-path ./models/SkillRouter-Embedding-0.6B \
+  --max-seq-length 4096 \
+  --doc-batch 16 \
+  --variants dense skillsight
+
+# SkillRet: 8,192 tokens
+python -m SkillSight.cli \
+  --benchmark sra \
+  --repo-root ./third_party/SR-Agents-main \
+  --model-path ./models/SKILLRET-Embedding-0.6B \
+  --max-seq-length 8192 \
+  --doc-batch 16 \
+  --variants dense skillsight
+```
+
 ## End-to-End Agent Evaluation
 
 The end-to-end experiment retrieves the top three skills, inserts them into the agent context, and evaluates task execution on SRA-Bench. It requires a separate vLLM environment and the SR-Agents evaluation code.
