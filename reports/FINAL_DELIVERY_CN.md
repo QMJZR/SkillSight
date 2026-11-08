@@ -177,7 +177,7 @@ SR-Agents 当前推理输出没有逐题 latency 和 token 元数据。
 
 ```bash
 cd source/SkillSight
-git status
+cat ../COMMIT.txt
 python -m unittest discover -s tests -v
 ```
 
